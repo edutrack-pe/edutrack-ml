@@ -218,3 +218,11 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# EduTrack
+.env
+*.joblib
+ml-research/data/*
+!ml-research/data/.gitkeep
+!ml-research/data/README.md
+.ipynb_checkpoints/
