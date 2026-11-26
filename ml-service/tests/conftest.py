@@ -11,7 +11,8 @@ RAIZ = Path(__file__).resolve().parent.parent
 @pytest.fixture(scope="session")
 def client():
     if not (RAIZ / "model" / "model.joblib").exists():
-        subprocess.run([sys.executable, str(RAIZ / "scripts" / "train_dummy.py")], check=True)
+        # --forzar: las pruebas del servicio necesitan un modelo aunque no cumpla la compuerta RNF-02.
+        subprocess.run([sys.executable, "-m", "pipeline.entrenar", "--forzar"], cwd=RAIZ, check=True)
     from app.main import app
 
     with TestClient(app) as c:

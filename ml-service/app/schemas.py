@@ -28,3 +28,4 @@ class PredictResponse(BaseModel):
     riesgo: Riesgo
     probabilidad: float
     factores: list[str]
+    modelo_version: str
