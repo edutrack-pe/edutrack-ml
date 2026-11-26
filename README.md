@@ -4,14 +4,23 @@ Microservicio de predicción de riesgo académico e investigación de Machine Le
 
 | Carpeta | Qué contiene |
 |---|---|
-| [`ml-service/`](ml-service) | API FastAPI que carga el modelo Random Forest y responde `/predict`. Es lo que se despliega. |
+| [`ml-service/`](ml-service) | Pipeline de entrenamiento (`pipeline/`) y API FastAPI que carga el modelo Random Forest y responde `/predict`. Es lo que se despliega. |
 | [`ml-research/`](ml-research) | Notebooks de EDA, VIF, SMOTE, entrenamiento y evaluación. No se despliega. |
+| [`docs/ml/`](docs/ml) | [Evaluación del modelo](docs/ml/MODEL_EVALUATION.md), [descripción del dataset](docs/ml/DATASET_DESCRIPTION.md) y [model card](docs/ml/MODEL_CARD.md). |
 
 ```mermaid
 flowchart LR
-    R[ml-research<br/>notebooks] -- exporta model.joblib --> S[ml-service<br/>FastAPI :8001]
+    P[pipeline.entrenar<br/>VIF → SMOTE → RF + CV] -- model.joblib + metricas.json --> S[ml-service<br/>FastAPI :8001]
     B[edutrack-backend] -- POST /predict/batch --> S
 ```
+
+## Estado del modelo publicado
+
+| Versión | F1 (prueba) | AUC‑ROC (prueba) | RNF‑02 (F1 ≥ 0,75 y AUC > 0,80) |
+|---|---|---|---|
+| `rf-20261126-9ad6a250` | 0,740 | 0,912 | ❌ F1 no alcanza la meta |
+
+Entrenado con **datos sintéticos** (2 000 filas). Métricas completas en [`ml-service/reports/metricas.json`](ml-service/reports/metricas.json).
 
 ## Contrato de la API (lo consume `edutrack-backend`, no cambiarlo sin avisar)
 
@@ -33,12 +42,13 @@ flowchart LR
 Respuesta:
 
 ```json
-{ "student_id": 1, "riesgo": "rojo", "probabilidad": 0.82, "factores": ["promedio", "cursos_desaprobados", "inasistencias"] }
+{ "student_id": 1, "riesgo": "rojo", "probabilidad": 0.82, "factores": ["promedio", "cursos_desaprobados"], "modelo_version": "rf-20261126-9ad6a250" }
 ```
 
 - `riesgo`: `verde` (< umbral_amarillo), `amarillo`, `rojo` (≥ umbral_rojo). Los umbrales son opcionales (por defecto 0.4 y 0.7).
-- `factores`: las 3 variables con mayor importancia en el modelo.
-- `POST /predict/batch`: recibe una lista de requests y devuelve una lista de respuestas.
+- `factores`: variables que más elevan el riesgo **de ese estudiante** (oclusión contra el perfil típico sin riesgo). Vacío para estudiantes en verde.
+- `POST /predict/batch`: lista de requests → lista de respuestas.
+- `GET /health` y `GET /modelo` (versión, variables, umbral y métricas).
 - Documentación interactiva: http://localhost:8001/docs
 
 ## Correr en local
@@ -48,9 +58,11 @@ cd ml-service
 python -m venv .venv
 source .venv/bin/activate        # Windows: .venv\Scripts\activate
 pip install -r requirements-dev.txt
-python scripts/train_dummy.py    # genera model/model.joblib con datos sintéticos
+python -m pipeline.entrenar      # genera model/model.joblib y reports/metricas.json
+                                 # termina con código 1 si no cumple RNF-02;
+                                 # --forzar publica el modelo igual (solo para demo)
 uvicorn app.main:app --reload --port 8001
-pytest --cov=app
+pytest --cov=app --cov=pipeline
 ```
 
 Con Docker:
@@ -61,10 +73,13 @@ docker build -t edutrack-ml .
 docker run -p 8001:8001 edutrack-ml
 ```
 
-## Flujo del modelo
+## Pipeline de entrenamiento
 
-1. **Hoy:** `train_dummy.py` entrena con datos **sintéticos** para que backend y frontend puedan integrarse desde el día 1.
-2. **Después:** en `ml-research/` se entrena el modelo real (VIF → SMOTE → Random Forest).
-3. Cuando cumpla **F1 ≥ 0.75 y AUC-ROC > 0.80**, se exporta a `ml-service/model/model.joblib` y se publica como *release* del repo (los `.joblib` no se versionan en Git).
+1. Dataset sintético reproducible (`pipeline/dataset.py`, semilla 42) y limpieza.
+2. División estratificada 80/20; la prueba solo se usa al final.
+3. VIF en entrenamiento (descarta VIF > 5).
+4. `Pipeline(SimpleImputer → SMOTE → RandomForest)` con `GridSearchCV` y `StratifiedKFold(5)`.
+5. Umbral de decisión elegido con predicciones fuera de *fold* del entrenamiento.
+6. Reporte de métricas y *quality gate* RNF‑02. Versión `rf-AAAAMMDD-hash`.
 
-> El reentrenamiento automático (MLOps) está fuera del alcance del MVP.
+Los `.joblib` no se versionan en Git. El reentrenamiento automático (MLOps) está fuera del alcance del MVP.
