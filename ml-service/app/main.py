@@ -18,7 +18,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title="EduTrack ML Service",
     description="Predicción del riesgo de desaprobación/deserción (Random Forest).",
-    version="0.1.0",
+    version="0.2.0",
     lifespan=lifespan,
 )
 
@@ -31,7 +31,13 @@ def _modelo() -> RiskModel:
 
 @app.get("/health")
 def health():
-    return {"status": "ok", "modelo_cargado": "modelo" in estado}
+    modelo = estado.get("modelo")
+    return {"status": "ok", "modelo_cargado": modelo is not None, "modelo_version": modelo.version if modelo else None}
+
+
+@app.get("/modelo", summary="Versión, variables y métricas del modelo publicado")
+def modelo_info():
+    return _modelo().info
 
 
 @app.post("/predict", response_model=PredictResponse)

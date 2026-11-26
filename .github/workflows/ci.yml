@@ -19,5 +19,25 @@ jobs:
           cache: pip
           cache-dependency-path: ml-service/requirements-dev.txt
       - run: pip install -r requirements-dev.txt
-      - run: python scripts/train_dummy.py
-      - run: pytest --cov=app --cov-report=term-missing --cov-fail-under=70
+      # Compuerta RNF-02 (F1 >= 0.75 y AUC-ROC > 0.80 en el 20 % de prueba). Se informa en el resumen
+      # del job; el modelo actual no la cumple y eso queda visible en lugar de ocultarse.
+      - name: Entrenar y evaluar (compuerta de calidad RNF-02)
+        id: compuerta
+        continue-on-error: true
+        run: python -m pipeline.entrenar
+      - name: Resumen de métricas
+        if: always()
+        run: |
+          echo "### Modelo de riesgo" >> "$GITHUB_STEP_SUMMARY"
+          echo "Compuerta RNF-02: ${{ steps.compuerta.outcome }}" >> "$GITHUB_STEP_SUMMARY"
+          echo '```json' >> "$GITHUB_STEP_SUMMARY"
+          cat reports/metricas.json >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+      - name: Modelo para las pruebas del servicio
+        run: test -f model/model.joblib || python -m pipeline.entrenar --forzar
+      - run: pytest --cov=app --cov=pipeline --cov-report=term-missing --cov-fail-under=70
+      - uses: actions/upload-artifact@v6
+        if: always()
+        with:
+          name: metricas-modelo
+          path: ml-service/reports/
