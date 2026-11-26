@@ -216,7 +216,8 @@ def main() -> int:
               "El modelo NO se publica (RNF-02). Revise el reporte o use --forzar.")
         return 1
     Path(args.salida).parent.mkdir(parents=True, exist_ok=True)
-    joblib.dump(paquete, args.salida)
+    # La evaluación viaja con el modelo: /modelo la expone sin depender del archivo de reporte.
+    joblib.dump({**paquete, "evaluacion": reporte}, args.salida)
     print(f"Modelo publicado en {args.salida}")
     return 0
 

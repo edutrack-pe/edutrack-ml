@@ -48,7 +48,7 @@ Respuesta:
 - `riesgo`: `verde` (< umbral_amarillo), `amarillo`, `rojo` (≥ umbral_rojo). Los umbrales son opcionales (por defecto 0.4 y 0.7).
 - `factores`: variables que más elevan el riesgo **de ese estudiante** (oclusión contra el perfil típico sin riesgo). Vacío para estudiantes en verde.
 - `POST /predict/batch`: lista de requests → lista de respuestas.
-- `GET /health` y `GET /modelo` (versión, variables, umbral y métricas).
+- `GET /health` y `GET /modelo` (versión, variables, umbral, métricas y `evaluacion`: el reporte completo de entrenamiento —matriz de confusión, sensibilidad al umbral, importancia de variables, VIF—). La evaluación viaja dentro de `model.joblib`; para modelos anteriores se lee de `reports/metricas.json` solo si es de la misma versión.
 - Documentación interactiva: http://localhost:8001/docs
 
 ## Correr en local

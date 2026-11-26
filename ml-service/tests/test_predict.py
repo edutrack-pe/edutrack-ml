@@ -21,6 +21,26 @@ def test_info_del_modelo(client):
     assert len(info["variables_modelo"]) >= 2
 
 
+def test_info_incluye_la_evaluacion_del_mismo_modelo(client):
+    info = client.get("/modelo").json()
+    ev = info["evaluacion"]
+    assert ev["version"] == info["version"]
+    assert set(ev["prueba"]["matriz_confusion"]) == {"vn", "fp", "fn", "vp"}
+    assert ev["prueba"]["f1"] == info["metricas"]["f1"]
+    assert set(ev["importancia_variables"]) == set(info["variables_modelo"])
+    assert isinstance(ev["cumple_rnf02"], bool)
+
+
+def test_reporte_de_otra_version_se_ignora(tmp_path):
+    from app.model_loader import _reporte_de
+
+    archivo = tmp_path / "metricas.json"
+    archivo.write_text('{"version": "rf-otra"}', encoding="utf-8")
+    assert _reporte_de("rf-20990101-abc", archivo) is None
+    assert _reporte_de("rf-otra", archivo) == {"version": "rf-otra"}
+    assert _reporte_de("rf-otra", tmp_path / "no-existe.json") is None
+
+
 def test_predict_contrato(client):
     r = client.post("/predict", json=alumno())
     assert r.status_code == 200

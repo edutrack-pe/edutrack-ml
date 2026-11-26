@@ -1,3 +1,4 @@
+import json
 import os
 from pathlib import Path
 
@@ -13,6 +14,18 @@ MODEL_PATH = Path(
 # Un factor se reporta si, al llevarlo al valor de referencia, la probabilidad baja al menos este monto.
 APORTE_MINIMO = 0.02
 MAX_FACTORES = 3
+REPORT_PATH = Path(
+    os.getenv("REPORT_PATH", Path(__file__).resolve().parent.parent / "reports" / "metricas.json")
+)
+
+
+def _reporte_de(version: str, path: Path = REPORT_PATH) -> dict | None:
+    """Evaluación de modelos entrenados antes de que el paquete la incluyera: solo si es de la misma versión."""
+    try:
+        reporte = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return None
+    return reporte if reporte.get("version") == version else None
 
 
 class RiskModel:
@@ -32,6 +45,7 @@ class RiskModel:
         self.referencia: dict[str, float] = paquete["referencia"]
         self.info = {k: paquete[k] for k in ("version", "variables_modelo", "umbral_decision", "metricas",
                                              "fecha_entrenamiento") if k in paquete}
+        self.info["evaluacion"] = paquete.get("evaluacion") or _reporte_de(self.version)
 
     def _probabilidades(self, filas: pd.DataFrame) -> list[float]:
         return [float(p) for p in self.modelo.predict_proba(filas[self.variables])[:, 1]]
