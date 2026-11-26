@@ -1,0 +1,18 @@
+# Blueprint de Render (plan gratuito) para el servicio de ML de EduTrack.
+# Render > New > Blueprint > repositorio edutrack-ml > rama "deploy".
+# La imagen entrena el modelo sintético durante el build (scripts/train_dummy.py).
+services:
+  - type: web
+    name: edutrack-ml
+    runtime: docker
+    plan: free
+    region: oregon
+    branch: deploy
+    autoDeploy: true
+    rootDir: ml-service
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    healthCheckPath: /health
+    envVars:
+      - key: PORT
+        value: "8001"
