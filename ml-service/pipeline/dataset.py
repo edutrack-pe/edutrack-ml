@@ -4,6 +4,10 @@ No existe un dataset autorizado de estudiantes reales (Ley N° 29733), por eso e
 datos ficticios. El proceso generador es el mismo que el proyecto usaba desde su primera versión
 (`scripts/train_dummy.py`); no se ajustó para alcanzar las metas de RNF-02.
 
+Tamaño: 10 000 filas. Con 2 000 el Random Forest no aprendía bien una frontera suave (F1 0,740 en prueba,
+frente a un techo teórico de 0,77 con la probabilidad real del generador). El tamaño se fijó una sola vez,
+antes de reentrenar, y no se ajustó según el resultado de la prueba.
+
 Variable objetivo `en_riesgo` (0/1): el estudiante desaprueba el año o abandona el colegio.
 Se simula con un puntaje latente `z` (combinación lineal de las variables) y un sorteo de Bernoulli con
 probabilidad sigmoide(z). Ese sorteo introduce ruido realista: dos estudiantes con el mismo perfil
@@ -16,7 +20,7 @@ import pandas as pd
 OBJETIVO = "en_riesgo"
 
 
-def generar(n: int = 2000, seed: int = 42) -> pd.DataFrame:
+def generar(n: int = 10_000, seed: int = 42) -> pd.DataFrame:
     rng = np.random.default_rng(seed)
     df = pd.DataFrame({
         "promedio": rng.normal(13, 2.5, n).clip(0, 20),

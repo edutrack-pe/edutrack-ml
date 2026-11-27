@@ -18,9 +18,9 @@ flowchart LR
 
 | Versión | F1 (prueba) | AUC‑ROC (prueba) | RNF‑02 (F1 ≥ 0,75 y AUC > 0,80) |
 |---|---|---|---|
-| `rf-20261126-9ad6a250` | 0,740 | 0,912 | ❌ F1 no alcanza la meta |
+| `rf-20261127-7734085c` | 0,755 | 0,923 | ✅ Cumple (validación cruzada F1 0,748 ± 0,019: margen pequeño) |
 
-Entrenado con **datos sintéticos** (2 000 filas). Métricas completas en [`ml-service/reports/metricas.json`](ml-service/reports/metricas.json).
+Entrenado con **datos sintéticos** (10 000 filas; la versión anterior, con 2 000, tenía F1 0,740). Métricas completas en [`ml-service/reports/metricas.json`](ml-service/reports/metricas.json).
 
 ## Contrato de la API (lo consume `edutrack-backend`, no cambiarlo sin avisar)
 
@@ -42,7 +42,7 @@ Entrenado con **datos sintéticos** (2 000 filas). Métricas completas en [`ml-s
 Respuesta:
 
 ```json
-{ "student_id": 1, "riesgo": "rojo", "probabilidad": 0.82, "factores": ["promedio", "cursos_desaprobados"], "modelo_version": "rf-20261126-9ad6a250" }
+{ "student_id": 1, "riesgo": "rojo", "probabilidad": 0.82, "factores": ["promedio", "cursos_desaprobados"], "modelo_version": "rf-20261127-7734085c" }
 ```
 
 - `riesgo`: `verde` (< umbral_amarillo), `amarillo`, `rojo` (≥ umbral_rojo). Los umbrales son opcionales (por defecto 0.4 y 0.7).
