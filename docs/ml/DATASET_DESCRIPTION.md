@@ -1,14 +1,16 @@
 # Descripción del dataset
 
 ## Origen
-**Sintético.** No existe un dataset autorizado de estudiantes reales (Ley N° 29733 de Protección de Datos Personales), así que el modelo se entrena con datos ficticios generados por `ml-service/pipeline/dataset.py` (`generar(n=2000, seed=42)`). El generador es el mismo que el proyecto usaba desde su primera versión (`train_dummy.py`); **no se ajustó para alcanzar las metas de RNF‑02**.
+**Sintético.** No existe un dataset autorizado de estudiantes reales (Ley N° 29733 de Protección de Datos Personales), así que el modelo se entrena con datos ficticios generados por `ml-service/pipeline/dataset.py` (`generar(n=10_000, seed=42)`). El generador es el mismo que el proyecto usaba desde su primera versión (`train_dummy.py`); **sus fórmulas no se ajustaron para alcanzar las metas de RNF‑02**.
+
+El tamaño pasó de 2 000 a 10 000 filas el 27/11/2026: con 2 000 el Random Forest no alcanzaba a aprender la frontera (F1 0,740, techo teórico 0,77). El tamaño se fijó antes de reentrenar y se entrenó una sola vez; ver el historial en `MODEL_EVALUATION.md`.
 
 ## Tamaño y balance
 | Elemento | Valor |
 |---|---|
-| Filas | 2 000 |
-| Entrenamiento / prueba | 1 600 / 400 (estratificado, semilla 42) |
-| Clase positiva (`en_riesgo = 1`) | 28,3 % |
+| Filas | 10 000 |
+| Entrenamiento / prueba | 8 000 / 2 000 (estratificado, semilla 42) |
+| Clase positiva (`en_riesgo = 1`) | 28,5 % |
 | Balanceo | SMOTE solo en los *folds* de entrenamiento |
 
 ## Variables

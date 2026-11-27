@@ -63,10 +63,12 @@ def test_factores_individuales(client):
     bueno = client.post("/predict", json=alumno()).json()
     assert bueno["factores"] == []  # en riesgo bajo no se señalan factores
 
+    # Perfil moderado: con notas muy bajas el promedio y los cursos desaprobados saturan la probabilidad
+    # y ocupan todos los factores, así que no se ve la diferencia entre faltas y tareas.
     solo_faltas = client.post("/predict", json=alumno(
-        promedio=9, inasistencias=18, cursos_desaprobados=4, tareas_entregadas_pct=0.95)).json()
+        promedio=11, inasistencias=18, cursos_desaprobados=2, tareas_entregadas_pct=0.95)).json()
     solo_tareas = client.post("/predict", json=alumno(
-        promedio=9, inasistencias=0, cursos_desaprobados=4, tareas_entregadas_pct=0.05)).json()
+        promedio=11, inasistencias=0, cursos_desaprobados=2, tareas_entregadas_pct=0.05)).json()
     assert "tareas_entregadas_pct" in solo_tareas["factores"]
     assert "tareas_entregadas_pct" not in solo_faltas["factores"]
     assert solo_faltas["factores"] != solo_tareas["factores"]
